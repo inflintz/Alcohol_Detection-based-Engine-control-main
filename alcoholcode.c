@@ -1,62 +1,94 @@
-#include <reg51.h>  // Include 8051 microcontroller headers
+#include <reg51.h>
 
-sbit MQ05 = P1^0;    // Pin assignment for MQ-05 gas sensor
-sbit LED = P3^5;     // Pin assignment for LED indicator
-sbit RS = P3^0;      // Pin assignment for RS pin of LCD
-sbit RW = P3^1;      // Pin assignment for RW pin of LCD
-sbit E = P3^2;       // Pin assignment for E pin of LCD
+sbit MQ05 = P1^0;    
 
-void delay(unsigned int time) {    
-    while (time--);  // Simple delay loop
+sbit LED = P3^5;
+
+sbit RS = P3^0;
+sbit RW = P3^1;
+sbit E  = P3^2;
+
+sbit IN1 = P2^0;
+sbit IN2 = P2^1;
+sbit IN3 = P2^2;
+sbit IN4 = P2^3;
+
+void delay(unsigned int time)
+{
+    unsigned int i,j;
+    for(i=0;i<time;i++)
+    for(j=0;j<1275;j++);
 }
 
-void lcd_cmd(unsigned char cmd) {
-    P0 = cmd;  // Send command
-    RS = 0;    // Command mode
-    RW = 0;    // Write mode
+void lcd_cmd(unsigned char cmd)
+{
+    P0 = cmd;
+    RS = 0;
+    RW = 0;
     E = 1;
-    delay(50);
+    delay(2);
     E = 0;
 }
 
-void lcd_write(unsigned char value) {
-    P0 = value;  // Send value to LCD
-    RS = 1;      // Data mode
-    RW = 0;      // Write mode
+void lcd_data(unsigned char value)
+{
+    P0 = value;
+    RS = 1;
+    RW = 0;
     E = 1;
-    delay(50);
+    delay(2);
     E = 0;
 }
 
-void lcd_init(void) {
-    delay(15000);  // Initial delay for LCD startup
-    lcd_cmd(0x38);  // Function set: 8-bit mode, 2 lines, 5x7 font
-    lcd_cmd(0x0C);  // Display ON, Cursor OFF
-    lcd_cmd(0x01);  // Clear display
-}
-
-void lcd_print(char *str) {
-    while (*str) {
-        lcd_write(*str);
-        str++;
+void lcd_print(char *str)
+{
+    while(*str)
+    {
+        lcd_data(*str++);
     }
 }
 
-void main(void) {
-    lcd_init();  // Initialize the LCD display
-    
-    while (1) {
-        lcd_cmd(0x01);  // Clear LCD before printing new message
-        delay(1000);
+void lcd_init()
+{
+    delay(20);
+    lcd_cmd(0x38);
+    lcd_cmd(0x0C);
+    lcd_cmd(0x01);
+    lcd_cmd(0x06);
+}
 
-        if (MQ05 == 0) {  // If alcohol is detected
-            LED = 1;  // Turn on the LED indicator
+void main()
+{
+    lcd_init();
+
+    while(1)
+    {
+        lcd_cmd(0x01);
+        delay(5);
+
+        if(MQ05 == 0)
+        {
+            LED = 1;
+
+            IN1 = 0;
+            IN2 = 0;
+            IN3 = 0;
+            IN4 = 0;
+
             lcd_print("Alcohol Detected");
-        } else {  // If alcohol is not detected
-            LED = 0;  // Turn off the LED indicator
+        }
+        else
+        {
+            LED = 0;
+
+            IN1 = 1;
+            IN2 = 0;
+            IN3 = 1;
+            IN4 = 0;
+
             lcd_print("No Alcohol");
         }
 
-        delay(50000);  // Add some delay before refreshing message
+        delay(500);
     }
 }
